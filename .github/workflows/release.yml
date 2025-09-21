@@ -1,0 +1,120 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0, v2.1.3 등과 같은 태그가 푸시될 때 실행
+  workflow_dispatch:  # 수동으로 실행할 수 있도록 설정
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # 전체 히스토리를 가져와서 태그 정보를 정확히 가져옴
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.24'
+
+    - name: Get version from tag
+      id: version
+      run: |
+        if [[ $GITHUB_REF == refs/tags/* ]]; then
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=dev-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build for all platforms
+      run: |
+        make build-all
+        echo "Build completed for all platforms"
+
+    - name: Create checksums
+      run: |
+        find dist -name "ktail-*" -type f -exec sha256sum {} \; > dist/checksums.txt
+        echo "Checksums created"
+
+    - name: Create release archive
+      run: |
+        mkdir -p release
+        
+        # Linux binaries
+        tar -czf release/ktail-linux.tar.gz -C dist ktail-linux-*
+        
+        # macOS binaries  
+        tar -czf release/ktail-darwin.tar.gz -C dist ktail-darwin-*
+        
+        # Windows binaries
+        zip -r release/ktail-windows.zip -j dist/ktail-windows-*
+        
+        # FreeBSD binaries
+        tar -czf release/ktail-freebsd.tar.gz -C dist ktail-freebsd-*
+        
+        # NetBSD binaries
+        tar -czf release/ktail-netbsd.tar.gz -C dist ktail-netbsd-*
+        
+        # OpenBSD binaries
+        tar -czf release/ktail-openbsd.tar.gz -C dist ktail-openbsd-*
+        
+        # All binaries archive
+        tar -czf release/ktail-all.tar.gz -C dist ktail-* checksums.txt
+        
+        echo "Release archives created"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        name: Release ${{ steps.version.outputs.VERSION }}
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        files: |
+          release/ktail-linux.tar.gz
+          release/ktail-darwin.tar.gz
+          release/ktail-windows.zip
+          release/ktail-freebsd.tar.gz
+          release/ktail-netbsd.tar.gz
+          release/ktail-openbsd.tar.gz
+          release/ktail-all.tar.gz
+          checksums.txt
+        body: |
+          ## ktail ${{ steps.version.outputs.VERSION }}
+          
+          ### Downloads
+          - **Linux**: `ktail-linux.tar.gz` (includes amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)
+          - **macOS**: `ktail-darwin.tar.gz` (includes amd64, arm64)
+          - **Windows**: `ktail-windows.zip` (includes amd64, 386, arm64)
+          - **FreeBSD**: `ktail-freebsd.tar.gz` (includes amd64, 386, arm64, arm)
+          - **NetBSD**: `ktail-netbsd.tar.gz` (includes amd64, 386, arm64, arm)
+          - **OpenBSD**: `ktail-openbsd.tar.gz` (includes amd64, 386, arm64, arm)
+          - **All platforms**: `ktail-all.tar.gz` (includes all binaries)
+          
+          ### Installation
+          1. Download the appropriate archive for your platform
+          2. Extract the archive
+          3. Move the binary to your PATH (e.g., `/usr/local/bin/`)
+          4. Make it executable: `chmod +x ktail`
+          
+          ### Verification
+          Use the provided `checksums.txt` file to verify the integrity of the downloaded files:
+          ```bash
+          sha256sum -c checksums.txt
+          ```
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ktail-binaries-${{ steps.version.outputs.VERSION }}
+        path: |
+          dist/
+          release/
+        retention-days: 30

@@ -19,34 +19,79 @@ build:
 
 # Build for multiple platforms
 .PHONY: build-all
-build-all: build-linux build-darwin build-windows
+build-all: build-linux build-darwin build-windows build-freebsd build-netbsd build-openbsd
 
 # Build for Linux
 .PHONY: build-linux
 build-linux:
 	@echo "Building for Linux..."
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-amd64 .
-	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-linux-arm64 .
+	@mkdir -p dist
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-amd64 .
+	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
+	GOOS=linux GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-386 .
+	GOOS=linux GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm .
+	GOOS=linux GOARCH=ppc64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-ppc64 .
+	GOOS=linux GOARCH=ppc64le go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-ppc64le .
+	GOOS=linux GOARCH=mips go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips .
+	GOOS=linux GOARCH=mipsle go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mipsle .
+	GOOS=linux GOARCH=mips64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips64 .
+	GOOS=linux GOARCH=mips64le go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips64le .
+	GOOS=linux GOARCH=riscv64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-riscv64 .
+	GOOS=linux GOARCH=s390x go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-s390x .
 
 # Build for macOS
 .PHONY: build-darwin
 build-darwin:
 	@echo "Building for macOS..."
-	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-amd64 .
-	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o $(BINARY_NAME)-darwin-arm64 .
+	@mkdir -p dist
+	GOOS=darwin GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-amd64 .
+	GOOS=darwin GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-darwin-arm64 .
 
 # Build for Windows
 .PHONY: build-windows
 build-windows:
 	@echo "Building for Windows..."
-	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o $(BINARY_NAME)-windows-amd64.exe .
+	@mkdir -p dist
+	GOOS=windows GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-amd64.exe .
+	GOOS=windows GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-386.exe .
+	GOOS=windows GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe .
+
+# Build for FreeBSD
+.PHONY: build-freebsd
+build-freebsd:
+	@echo "Building for FreeBSD..."
+	@mkdir -p dist
+	GOOS=freebsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-amd64 .
+	GOOS=freebsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-386 .
+	GOOS=freebsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-arm64 .
+	GOOS=freebsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-arm .
+
+# Build for NetBSD
+.PHONY: build-netbsd
+build-netbsd:
+	@echo "Building for NetBSD..."
+	@mkdir -p dist
+	GOOS=netbsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-amd64 .
+	GOOS=netbsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-386 .
+	GOOS=netbsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-arm64 .
+	GOOS=netbsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-arm .
+
+# Build for OpenBSD
+.PHONY: build-openbsd
+build-openbsd:
+	@echo "Building for OpenBSD..."
+	@mkdir -p dist
+	GOOS=openbsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-amd64 .
+	GOOS=openbsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-386 .
+	GOOS=openbsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-arm64 .
+	GOOS=openbsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-arm .
+
 
 # Clean build artifacts
 .PHONY: clean
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -f $(BINARY_NAME)
-	rm -f $(BINARY_NAME)-*
 	rm -rf dist/
 
 # Install the binary to GOPATH/bin
@@ -139,15 +184,16 @@ tidy:
 .PHONY: release
 release: clean build-all
 	@echo "Creating release package..."
-	mkdir -p dist
-	@for binary in $(BINARY_NAME)-*; do \
+	@cd dist && \
+	for binary in $(BINARY_NAME)-*; do \
 		if [[ $$binary == *".exe" ]]; then \
-			zip dist/$$binary.zip $$binary; \
+			zip $$binary.zip $$binary; \
 		else \
-			tar -czf dist/$$binary.tar.gz $$binary; \
+			tar -czf $$binary.tar.gz $$binary; \
 		fi; \
 	done
 	@echo "Release packages created in dist/"
+	@echo "Total binaries created: $$(ls dist/$(BINARY_NAME)-* | wc -l)"
 
 # Show version information
 .PHONY: version
@@ -155,6 +201,33 @@ version:
 	@echo "Version: $(VERSION)"
 	@echo "Build Time: $(BUILD_TIME)"
 	@echo "Go Version: $(GO_VERSION)"
+
+# List all supported platforms and architectures
+.PHONY: list-platforms
+list-platforms:
+	@echo "Supported platforms and architectures:"
+	@echo "  Linux:     amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x"
+	@echo "  macOS:     amd64, arm64"
+	@echo "  Windows:   amd64, 386, arm64"
+	@echo "  FreeBSD:   amd64, 386, arm64, arm"
+	@echo "  NetBSD:    amd64, 386, arm64, arm"
+	@echo "  OpenBSD:   amd64, 386, arm64, arm"
+
+# Build only for specific architecture (usage: make build-arch GOOS=linux GOARCH=amd64)
+.PHONY: build-arch
+build-arch:
+	@echo "Building for $(GOOS)/$(GOARCH)..."
+	@if [ -z "$(GOOS)" ] || [ -z "$(GOARCH)" ]; then \
+		echo "Usage: make build-arch GOOS=<os> GOARCH=<arch>"; \
+		echo "Example: make build-arch GOOS=linux GOARCH=amd64"; \
+		exit 1; \
+	fi
+	@mkdir -p dist
+	@if [ "$(GOOS)" = "windows" ]; then \
+		go build $(LDFLAGS) -o dist/$(BINARY_NAME)-$(GOOS)-$(GOARCH).exe .; \
+	else \
+		go build $(LDFLAGS) -o dist/$(BINARY_NAME)-$(GOOS)-$(GOARCH) .; \
+	fi
 
 # Development setup
 .PHONY: dev-setup
@@ -175,15 +248,46 @@ dev-setup:
 .PHONY: dev
 dev: fmt vet build run
 
+# Create a new git tag for release
+.PHONY: tag
+tag:
+	@echo "Creating new tag..."
+	@read -p "Enter tag version (e.g., v1.0.0): " version; \
+	if [ -z "$$version" ]; then \
+		echo "Error: Version cannot be empty"; \
+		exit 1; \
+	fi; \
+	git tag -a $$version -m "Release $$version"; \
+	echo "Tag $$version created. Push with: git push origin $$version"
+
+# Push tag to trigger GitHub release
+.PHONY: release-tag
+release-tag:
+	@echo "Pushing tag to trigger GitHub release..."
+	@git push origin --tags
+
+# Create and push release tag
+.PHONY: release-github
+release-github: tag release-tag
+	@echo "Release tag created and pushed to GitHub"
+
 # Show help
 .PHONY: help
 help:
 	@echo "Available targets:"
 	@echo "  build         - Build the binary"
-	@echo "  build-all     - Build for all platforms (Linux, macOS, Windows)"
-	@echo "  build-linux   - Build for Linux (amd64, arm64)"
+	@echo "  build-all     - Build for all platforms and architectures"
+	@echo "  build-linux   - Build for Linux (amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)"
 	@echo "  build-darwin  - Build for macOS (amd64, arm64)"
-	@echo "  build-windows - Build for Windows (amd64)"
+	@echo "  build-windows - Build for Windows (amd64, 386, arm64)"
+	@echo "  build-freebsd - Build for FreeBSD (amd64, 386, arm64, arm)"
+	@echo "  build-netbsd  - Build for NetBSD (amd64, 386, arm64, arm)"
+	@echo "  build-openbsd - Build for OpenBSD (amd64, 386, arm64, arm)"
+	@echo "  build-arch    - Build for specific architecture (GOOS=linux GOARCH=amd64)"
+	@echo "  list-platforms - List all supported platforms and architectures"
+	@echo "  tag           - Create a new git tag for release"
+	@echo "  release-tag   - Push tag to trigger GitHub release"
+	@echo "  release-github - Create and push release tag (combines tag + release-tag)"
 	@echo "  clean         - Clean build artifacts"
 	@echo "  install       - Install the binary to GOPATH/bin"
 	@echo "  run           - Build and run the application"

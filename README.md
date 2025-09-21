@@ -1,121 +1,256 @@
 # ktail
 
-A Kubernetes log tail utility with interactive namespace and pod selection using fuzzy finder.
+Kubernetes 로그를 실시간으로 추적하는 유틸리티로, 퍼지 파인더를 사용한 대화형 네임스페이스 및 파드 선택 기능을 제공합니다.
 
-## Overview
+## 개요
 
-`ktail` is a tool that provides `tail`-like functionality for Kubernetes pod logs. It allows you to interactively select namespaces and pods using a fuzzy finder for a better user experience, making it easy to follow logs from any pod in your cluster.
+`ktail`은 Kubernetes 파드 로그에 대한 `tail` 기능을 제공하는 도구입니다. 퍼지 파인더를 사용하여 네임스페이스와 파드를 대화형으로 선택할 수 있어 더 나은 사용자 경험을 제공하며, 클러스터의 모든 파드에서 로그를 쉽게 추적할 수 있습니다.
 
-## Features
+## 주요 기능
 
-- 🎯 **Interactive Selection**: Use fuzzy finder to interactively select namespaces and pods
-- 📊 **Pod Status Display**: Visual indicators for pod status (Running, Pending, Failed, etc.)
-- 🔄 **Real-time Log Streaming**: Follow logs in real-time with `tail -f` behavior
-- 🎛️ **Flexible Options**: Support for custom tail lines, container selection, and more
-- 🚀 **Easy to Use**: Simple CLI interface with sensible defaults
+- 🎯 **대화형 선택**: 퍼지 파인더를 사용하여 네임스페이스와 파드를 대화형으로 선택
+- 📊 **파드 상태 표시**: 파드 상태에 대한 시각적 표시 (Running, Pending, Failed 등)
+- 🔄 **실시간 로그 스트리밍**: `tail -f` 동작으로 실시간 로그 추적
+- 🎛️ **유연한 옵션**: 사용자 정의 tail 라인, 컨테이너 선택 등 지원
+- 🚀 **사용하기 쉬움**: 합리적인 기본값을 가진 간단한 CLI 인터페이스
 
-## Prerequisites
+## 사전 요구사항
 
-- Go 1.19 or later
-- Access to a Kubernetes cluster
-- `kubectl` configured to access your cluster
+- Go 1.24 이상
+- Kubernetes 클러스터 접근 권한
+- 클러스터에 접근할 수 있도록 구성된 `kubectl`
 
-**Note**: No external dependencies required! The tool uses the `go-fuzzyfinder` library for interactive selection, so you don't need to install `fzf` separately.
+**참고**: 외부 의존성이 필요하지 않습니다! 이 도구는 대화형 선택을 위해 `go-fuzzyfinder` 라이브러리를 사용하므로 `fzf`를 별도로 설치할 필요가 없습니다.
 
-## Installation
+## 설치
 
-1. Clone the repository:
+### 옵션 1: GitHub 릴리즈에서 다운로드 (권장)
+
+1. [릴리즈 페이지](https://github.com/your-username/ktail/releases)로 이동
+2. 플랫폼에 맞는 아카이브를 다운로드:
+   - **Linux**: `ktail-linux.tar.gz` (amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x 포함)
+   - **macOS**: `ktail-darwin.tar.gz` (amd64, arm64 포함)
+   - **Windows**: `ktail-windows.zip` (amd64, 386, arm64 포함)
+   - **FreeBSD**: `ktail-freebsd.tar.gz` (amd64, 386, arm64, arm 포함)
+   - **NetBSD**: `ktail-netbsd.tar.gz` (amd64, 386, arm64, arm 포함)
+   - **OpenBSD**: `ktail-openbsd.tar.gz` (amd64, 386, arm64, arm 포함)
+   - **모든 플랫폼**: `ktail-all.tar.gz` (모든 바이너리 포함)
+
+3. 아카이브를 추출하고 바이너리를 PATH에 추가:
+```bash
+# Linux/macOS용
+tar -xzf ktail-linux.tar.gz
+chmod +x ktail-linux-*
+sudo mv ktail-linux-* /usr/local/bin/ktail
+
+# Windows용
+# ktail-windows.zip을 추출하고 PATH에 추가
+```
+
+4. 설치 확인:
+```bash
+ktail --help
+```
+
+### 옵션 2: 소스에서 빌드
+
+1. 저장소 클론:
 ```bash
 git clone <repository-url>
 cd ktail
 ```
 
-2. Build the project:
+2. 프로젝트 빌드:
 ```bash
+# Makefile 사용 (권장)
+make build
+
+# 또는 수동으로
 go build -o ktail
 ```
 
-3. Make it executable and move to PATH (optional):
+3. 실행 가능하게 만들고 PATH에 추가 (선택사항):
 ```bash
 chmod +x ktail
 sudo mv ktail /usr/local/bin/
 ```
 
-## Usage
-
-### Basic Usage
+### 옵션 3: 모든 플랫폼용 빌드
 
 ```bash
-# Interactive mode - select namespace and pod using fuzzy finder
+# 모든 지원 플랫폼과 아키텍처에 대해 빌드
+make build-all
+
+# 특정 플랫폼만 빌드
+make build-linux
+make build-darwin
+make build-windows
+
+# 특정 아키텍처만 빌드
+make build-arch GOOS=linux GOARCH=arm64
+```
+
+## 사용법
+
+### 기본 사용법
+
+```bash
+# 대화형 모드 - 퍼지 파인더를 사용하여 네임스페이스와 파드 선택
 ./ktail
 
-# Specify namespace and pod directly
+# 네임스페이스와 파드를 직접 지정
 ./ktail -n my-namespace -p my-pod
 
-# Show help
+# 도움말 보기
 ./ktail --help
 ```
 
-### Command Line Options
+### 명령줄 옵션
 
 ```bash
-Usage:
+사용법:
   ktail [flags]
 
-Flags:
-  -c, --container string    Container name (if not provided, will use the first container)
-  -f, --follow             Follow log output (default: true)
-  -h, --help               help for ktail
-  -n, --namespace string   Kubernetes namespace (if not provided, will be selected interactively)
-  -p, --pod string         Pod name (if not provided, will be selected interactively)
-  -t, --tail int           Number of lines to show from the end of logs (default: 100)
+플래그:
+  -c, --container string    컨테이너 이름 (제공되지 않으면 첫 번째 컨테이너 사용)
+  -f, --follow             로그 출력 추적 (기본값: true)
+  -h, --help               ktail 도움말
+  -n, --namespace string   Kubernetes 네임스페이스 (제공되지 않으면 대화형으로 선택)
+  -p, --pod string         파드 이름 (제공되지 않으면 대화형으로 선택)
+  -t, --tail int           로그 끝에서 보여줄 라인 수 (기본값: 100)
 ```
 
-### Examples
+### 예제
 
 ```bash
-# Follow logs from a specific pod
+# 특정 파드의 로그 추적
 ./ktail -n production -p web-app-7d4f8b9c6-xyz12
 
-# Show last 50 lines and follow
+# 마지막 50줄을 보여주고 추적
 ./ktail -n staging -p api-server -t 50
 
-# Follow logs from a specific container
+# 특정 컨테이너의 로그 추적
 ./ktail -n default -p my-pod -c sidecar-container
 
-# Interactive selection with custom tail lines
+# 사용자 정의 tail 라인으로 대화형 선택
 ./ktail -t 200
 ```
 
-## Development
+## 개발
 
-### Running tests
+### 사전 요구사항
+- Go 1.24 이상
+- Make (Makefile 사용을 위해)
+
+### 테스트 실행
 ```bash
+# 모든 테스트 실행
+make test
+
+# 커버리지와 함께 테스트 실행
+make test-coverage
+
+# 또는 수동으로
 go test ./...
 ```
 
-### Building for different platforms
+### 다양한 플랫폼용 빌드
 ```bash
-# Linux
-GOOS=linux GOARCH=amd64 go build -o ktail-linux
+# 모든 지원 플랫폼에 대해 빌드
+make build-all
 
-# Windows
-GOOS=windows GOARCH=amd64 go build -o ktail.exe
+# 특정 플랫폼만 빌드
+make build-linux
+make build-darwin
+make build-windows
 
-# macOS
-GOOS=darwin GOARCH=amd64 go build -o ktail-macos
+# 특정 아키텍처만 빌드
+make build-arch GOOS=linux GOARCH=arm64
+
+# 지원하는 모든 플랫폼 목록 보기
+make list-platforms
 ```
 
-## Contributing
+### 코드 품질
+```bash
+# 코드 포맷팅
+make fmt
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+# 린터 실행
+make lint
 
-## License
+# go vet 실행
+make vet
 
-This project is licensed under the MIT License.
+# 보안 검사
+make security
 
+# 모든 품질 검사 실행
+make dev-setup
+```
 
+### 릴리즈 생성
+```bash
+# 새로운 릴리즈 태그 생성 및 GitHub에 푸시
+make release-github
+
+# 또는 수동으로
+make tag
+make release-tag
+```
+
+이렇게 하면:
+1. git 태그 생성 (예: v1.0.0)
+2. 태그를 GitHub에 푸시
+3. GitHub Actions가 모든 플랫폼용 바이너리 빌드 트리거
+4. 모든 바이너리가 첨부된 GitHub 릴리즈 생성
+
+## 기여하기
+
+1. 저장소 포크
+2. 기능 브랜치 생성
+3. 변경사항 적용
+4. 해당하는 경우 테스트 추가
+5. 풀 리퀘스트 제출
+
+## 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 라이선스가 부여됩니다.
+
+## 지원하는 플랫폼
+
+- **Linux**: amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x
+- **macOS**: amd64, arm64
+- **Windows**: amd64, 386, arm64
+- **FreeBSD**: amd64, 386, arm64, arm
+- **NetBSD**: amd64, 386, arm64, arm
+- **OpenBSD**: amd64, 386, arm64, arm
+
+## 문제 해결
+
+### 일반적인 문제
+
+1. **kubectl 연결 오류**: `kubectl`이 올바르게 구성되어 있는지 확인
+2. **권한 오류**: 클러스터에 대한 적절한 권한이 있는지 확인
+3. **파드가 보이지 않음**: 네임스페이스 권한을 확인
+
+### 로그 레벨 조정
+
+환경 변수를 사용하여 로그 레벨을 조정할 수 있습니다:
+
+```bash
+export KTAIL_LOG_LEVEL=debug
+./ktail
+```
+
+## 변경 로그
+
+### v1.0.0
+- 초기 릴리즈
+- 대화형 네임스페이스 및 파드 선택
+- 실시간 로그 스트리밍
+- 다중 플랫폼 지원
+
+---
+
+**English**: [README.en.md](README.en.md)
