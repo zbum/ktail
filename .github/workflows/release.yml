@@ -44,28 +44,75 @@ jobs:
       run: |
         mkdir -p release
         
+        # Check if dist directory exists and has files
+        if [ ! -d "dist" ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
+          echo "Error: dist directory is empty or does not exist"
+          ls -la
+          exit 1
+        fi
+        
+        # List files in dist directory for debugging
+        echo "Files in dist directory:"
+        ls -la dist/
+        
         # Linux binaries
-        tar -czf release/ktail-linux.tar.gz -C dist ktail-linux-*
+        if ls dist/ktail-linux-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-linux.tar.gz -C dist ktail-linux-*
+          echo "Created ktail-linux.tar.gz"
+        else
+          echo "Warning: No Linux binaries found"
+        fi
         
         # macOS binaries  
-        tar -czf release/ktail-darwin.tar.gz -C dist ktail-darwin-*
+        if ls dist/ktail-darwin-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-darwin.tar.gz -C dist ktail-darwin-*
+          echo "Created ktail-darwin.tar.gz"
+        else
+          echo "Warning: No macOS binaries found"
+        fi
         
         # Windows binaries
-        zip -r release/ktail-windows.zip -j dist/ktail-windows-*
+        if ls dist/ktail-windows-* 1> /dev/null 2>&1; then
+          zip -r release/ktail-windows.zip -j dist/ktail-windows-*
+          echo "Created ktail-windows.zip"
+        else
+          echo "Warning: No Windows binaries found"
+        fi
         
         # FreeBSD binaries
-        tar -czf release/ktail-freebsd.tar.gz -C dist ktail-freebsd-*
+        if ls dist/ktail-freebsd-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-freebsd.tar.gz -C dist ktail-freebsd-*
+          echo "Created ktail-freebsd.tar.gz"
+        else
+          echo "Warning: No FreeBSD binaries found"
+        fi
         
         # NetBSD binaries
-        tar -czf release/ktail-netbsd.tar.gz -C dist ktail-netbsd-*
+        if ls dist/ktail-netbsd-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-netbsd.tar.gz -C dist ktail-netbsd-*
+          echo "Created ktail-netbsd.tar.gz"
+        else
+          echo "Warning: No NetBSD binaries found"
+        fi
         
         # OpenBSD binaries
-        tar -czf release/ktail-openbsd.tar.gz -C dist ktail-openbsd-*
+        if ls dist/ktail-openbsd-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-openbsd.tar.gz -C dist ktail-openbsd-*
+          echo "Created ktail-openbsd.tar.gz"
+        else
+          echo "Warning: No OpenBSD binaries found"
+        fi
         
         # All binaries archive
-        tar -czf release/ktail-all.tar.gz -C dist ktail-* checksums.txt
+        if ls dist/ktail-* 1> /dev/null 2>&1; then
+          tar -czf release/ktail-all.tar.gz -C dist ktail-* checksums.txt
+          echo "Created ktail-all.tar.gz"
+        else
+          echo "Warning: No binaries found for all-platforms archive"
+        fi
         
         echo "Release archives created"
+        ls -la release/
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
