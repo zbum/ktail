@@ -30,14 +30,6 @@ build-linux:
 	GOOS=linux GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm64 .
 	GOOS=linux GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-386 .
 	GOOS=linux GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-arm .
-	GOOS=linux GOARCH=ppc64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-ppc64 .
-	GOOS=linux GOARCH=ppc64le go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-ppc64le .
-	GOOS=linux GOARCH=mips go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips .
-	GOOS=linux GOARCH=mipsle go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mipsle .
-	GOOS=linux GOARCH=mips64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips64 .
-	GOOS=linux GOARCH=mips64le go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-mips64le .
-	GOOS=linux GOARCH=riscv64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-riscv64 .
-	GOOS=linux GOARCH=s390x go build $(LDFLAGS) -o dist/$(BINARY_NAME)-linux-s390x .
 
 # Build for macOS
 .PHONY: build-darwin
@@ -177,7 +169,7 @@ version:
 .PHONY: list-platforms
 list-platforms:
 	@echo "Supported platforms and architectures:"
-	@echo "  Linux:     amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x"
+	@echo "  Linux:     amd64, arm64, 386, arm"
 	@echo "  macOS:     amd64, arm64"
 	@echo "  Windows:   amd64, 386, arm64"
 
@@ -245,7 +237,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build         - Build the binary"
 	@echo "  build-all     - Build for all platforms and architectures"
-	@echo "  build-linux   - Build for Linux (amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)"
+	@echo "  build-linux   - Build for Linux (amd64, arm64, 386, arm)"
 	@echo "  build-darwin  - Build for macOS (amd64, arm64)"
 	@echo "  build-windows - Build for Windows (amd64, 386, arm64)"
 	@echo "  build-arch    - Build for specific architecture (GOOS=linux GOARCH=amd64)"
