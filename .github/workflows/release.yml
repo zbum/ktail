@@ -82,32 +82,6 @@ jobs:
           echo "Warning: No Windows binaries found"
         fi
         
-        # FreeBSD binaries
-        FREEBSD_FILES=$(ls dist/ktail-freebsd-* 2>/dev/null || true)
-        if [ -n "$FREEBSD_FILES" ]; then
-          tar -czf release/ktail-freebsd.tar.gz -C dist $(basename -a $FREEBSD_FILES)
-          echo "Created ktail-freebsd.tar.gz with files: $FREEBSD_FILES"
-        else
-          echo "Warning: No FreeBSD binaries found"
-        fi
-        
-        # NetBSD binaries
-        NETBSD_FILES=$(ls dist/ktail-netbsd-* 2>/dev/null || true)
-        if [ -n "$NETBSD_FILES" ]; then
-          tar -czf release/ktail-netbsd.tar.gz -C dist $(basename -a $NETBSD_FILES)
-          echo "Created ktail-netbsd.tar.gz with files: $NETBSD_FILES"
-        else
-          echo "Warning: No NetBSD binaries found"
-        fi
-        
-        # OpenBSD binaries
-        OPENBSD_FILES=$(ls dist/ktail-openbsd-* 2>/dev/null || true)
-        if [ -n "$OPENBSD_FILES" ]; then
-          tar -czf release/ktail-openbsd.tar.gz -C dist $(basename -a $OPENBSD_FILES)
-          echo "Created ktail-openbsd.tar.gz with files: $OPENBSD_FILES"
-        else
-          echo "Warning: No OpenBSD binaries found"
-        fi
         
         # All binaries archive
         ALL_FILES=$(ls dist/ktail-* 2>/dev/null || true)
@@ -133,9 +107,6 @@ jobs:
           release/ktail-linux.tar.gz
           release/ktail-darwin.tar.gz
           release/ktail-windows.zip
-          release/ktail-freebsd.tar.gz
-          release/ktail-netbsd.tar.gz
-          release/ktail-openbsd.tar.gz
           release/ktail-all.tar.gz
           checksums.txt
         body: |
@@ -145,9 +116,6 @@ jobs:
           - **Linux**: `ktail-linux.tar.gz` (includes amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)
           - **macOS**: `ktail-darwin.tar.gz` (includes amd64, arm64)
           - **Windows**: `ktail-windows.zip` (includes amd64, 386, arm64)
-          - **FreeBSD**: `ktail-freebsd.tar.gz` (includes amd64, 386, arm64, arm)
-          - **NetBSD**: `ktail-netbsd.tar.gz` (includes amd64, 386, arm64, arm)
-          - **OpenBSD**: `ktail-openbsd.tar.gz` (includes amd64, 386, arm64, arm)
           - **All platforms**: `ktail-all.tar.gz` (includes all binaries)
           
           ### Installation

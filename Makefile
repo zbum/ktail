@@ -19,7 +19,7 @@ build:
 
 # Build for multiple platforms
 .PHONY: build-all
-build-all: build-linux build-darwin build-windows build-freebsd build-netbsd build-openbsd
+build-all: build-linux build-darwin build-windows
 
 # Build for Linux
 .PHONY: build-linux
@@ -56,35 +56,6 @@ build-windows:
 	GOOS=windows GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-386.exe .
 	GOOS=windows GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-windows-arm64.exe .
 
-# Build for FreeBSD
-.PHONY: build-freebsd
-build-freebsd:
-	@echo "Building for FreeBSD..."
-	@mkdir -p dist
-	GOOS=freebsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-amd64 .
-	GOOS=freebsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-386 .
-	GOOS=freebsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-arm64 .
-	GOOS=freebsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-freebsd-arm .
-
-# Build for NetBSD
-.PHONY: build-netbsd
-build-netbsd:
-	@echo "Building for NetBSD..."
-	@mkdir -p dist
-	GOOS=netbsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-amd64 .
-	GOOS=netbsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-386 .
-	GOOS=netbsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-arm64 .
-	GOOS=netbsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-netbsd-arm .
-
-# Build for OpenBSD
-.PHONY: build-openbsd
-build-openbsd:
-	@echo "Building for OpenBSD..."
-	@mkdir -p dist
-	GOOS=openbsd GOARCH=amd64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-amd64 .
-	GOOS=openbsd GOARCH=386 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-386 .
-	GOOS=openbsd GOARCH=arm64 go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-arm64 .
-	GOOS=openbsd GOARCH=arm go build $(LDFLAGS) -o dist/$(BINARY_NAME)-openbsd-arm .
 
 
 # Clean build artifacts
@@ -209,9 +180,6 @@ list-platforms:
 	@echo "  Linux:     amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x"
 	@echo "  macOS:     amd64, arm64"
 	@echo "  Windows:   amd64, 386, arm64"
-	@echo "  FreeBSD:   amd64, 386, arm64, arm"
-	@echo "  NetBSD:    amd64, 386, arm64, arm"
-	@echo "  OpenBSD:   amd64, 386, arm64, arm"
 
 # Build only for specific architecture (usage: make build-arch GOOS=linux GOARCH=amd64)
 .PHONY: build-arch
@@ -280,9 +248,6 @@ help:
 	@echo "  build-linux   - Build for Linux (amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)"
 	@echo "  build-darwin  - Build for macOS (amd64, arm64)"
 	@echo "  build-windows - Build for Windows (amd64, 386, arm64)"
-	@echo "  build-freebsd - Build for FreeBSD (amd64, 386, arm64, arm)"
-	@echo "  build-netbsd  - Build for NetBSD (amd64, 386, arm64, arm)"
-	@echo "  build-openbsd - Build for OpenBSD (amd64, 386, arm64, arm)"
 	@echo "  build-arch    - Build for specific architecture (GOOS=linux GOARCH=amd64)"
 	@echo "  list-platforms - List all supported platforms and architectures"
 	@echo "  tag           - Create a new git tag for release"

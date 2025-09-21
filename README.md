@@ -31,9 +31,6 @@ Kubernetes 로그를 실시간으로 추적하는 유틸리티로, 퍼지 파인
    - **Linux**: `ktail-linux.tar.gz` (amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x 포함)
    - **macOS**: `ktail-darwin.tar.gz` (amd64, arm64 포함)
    - **Windows**: `ktail-windows.zip` (amd64, 386, arm64 포함)
-   - **FreeBSD**: `ktail-freebsd.tar.gz` (amd64, 386, arm64, arm 포함)
-   - **NetBSD**: `ktail-netbsd.tar.gz` (amd64, 386, arm64, arm 포함)
-   - **OpenBSD**: `ktail-openbsd.tar.gz` (amd64, 386, arm64, arm 포함)
    - **모든 플랫폼**: `ktail-all.tar.gz` (모든 바이너리 포함)
 
 3. 아카이브를 추출하고 바이너리를 PATH에 추가:
@@ -222,9 +219,6 @@ make release-tag
 - **Linux**: amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x
 - **macOS**: amd64, arm64
 - **Windows**: amd64, 386, arm64
-- **FreeBSD**: amd64, 386, arm64, arm
-- **NetBSD**: amd64, 386, arm64, arm
-- **OpenBSD**: amd64, 386, arm64, arm
 
 ## 문제 해결
 

@@ -31,9 +31,6 @@ A Kubernetes log tail utility with interactive namespace and pod selection using
    - **Linux**: `ktail-linux.tar.gz` (includes amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)
    - **macOS**: `ktail-darwin.tar.gz` (includes amd64, arm64)
    - **Windows**: `ktail-windows.zip` (includes amd64, 386, arm64)
-   - **FreeBSD**: `ktail-freebsd.tar.gz` (includes amd64, 386, arm64, arm)
-   - **NetBSD**: `ktail-netbsd.tar.gz` (includes amd64, 386, arm64, arm)
-   - **OpenBSD**: `ktail-openbsd.tar.gz` (includes amd64, 386, arm64, arm)
    - **All platforms**: `ktail-all.tar.gz` (includes all binaries)
 
 3. Extract the archive and move the binary to your PATH:
