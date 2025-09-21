@@ -5,6 +5,7 @@ type PodInfo struct {
 	Namespace string
 	Name      string
 	Container string
+	Status    string
 }
 
 // LogLine represents a log line with associated pod information

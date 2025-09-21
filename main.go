@@ -113,57 +113,87 @@ func runKtail(cmd *cobra.Command, args []string) {
 	// Collect pods from all target namespaces
 	var allPods []PodInfo
 
-	for _, ns := range targetNamespaces {
-		var podNames []string
-		if podName != "" {
-			// Single pod specified
-			podNames = []string{podName}
-		} else if singlePod {
-			// Single pod selection
-			selectedPod, err := selectPod(clientset, ns)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to select pod in namespace %s: %v\n", ns, err)
-				os.Exit(1)
-			}
-			podNames = []string{selectedPod}
-		} else if multiSelect {
-			// Multi-select pods
-			podNames, err = selectPodsMulti(clientset, ns)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to select pods in namespace %s: %v\n", ns, err)
-				os.Exit(1)
-			}
-		} else {
-			// Default: Select all pods in the namespace
-			podNames, err = getAllPods(clientset, ns)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Failed to get all pods in namespace %s: %v\n", ns, err)
-				os.Exit(1)
-			}
+	// If multi-select pods across multiple namespaces, select from all namespaces at once
+	if multiSelect && len(targetNamespaces) > 1 {
+		// Multi-select pods across all target namespaces
+		selectedPods, err := selectPodsMultiAcrossNamespaces(clientset, targetNamespaces)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to select pods across namespaces: %v\n", err)
+			os.Exit(1)
 		}
 
-		// Skip if no pods found in this namespace
-		if len(podNames) == 0 {
-			continue
-		}
-
-		// Get container names for all selected pods in this namespace
-		for _, pod := range podNames {
+		// Get container names for all selected pods
+		for _, podInfo := range selectedPods {
 			var containerName string
 			if container == "" {
-				containerName, err = getFirstContainer(clientset, ns, pod)
+				containerName, err = getFirstContainer(clientset, podInfo.Namespace, podInfo.Name)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", pod, ns, err)
+					fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", podInfo.Name, podInfo.Namespace, err)
 					os.Exit(1)
 				}
 			} else {
 				containerName = container
 			}
 			allPods = append(allPods, PodInfo{
-				Namespace: ns,
-				Name:      pod,
+				Namespace: podInfo.Namespace,
+				Name:      podInfo.Name,
 				Container: containerName,
 			})
+		}
+	} else {
+		// Original logic for single namespace or when not using multi-select across namespaces
+		for _, ns := range targetNamespaces {
+			var podNames []string
+			if podName != "" {
+				// Single pod specified
+				podNames = []string{podName}
+			} else if singlePod {
+				// Single pod selection
+				selectedPod, err := selectPod(clientset, ns)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to select pod in namespace %s: %v\n", ns, err)
+					os.Exit(1)
+				}
+				podNames = []string{selectedPod}
+			} else if multiSelect {
+				// Multi-select pods in single namespace
+				podNames, err = selectPodsMulti(clientset, ns)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to select pods in namespace %s: %v\n", ns, err)
+					os.Exit(1)
+				}
+			} else {
+				// Default: Select all pods in the namespace
+				podNames, err = getAllPods(clientset, ns)
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "Failed to get all pods in namespace %s: %v\n", ns, err)
+					os.Exit(1)
+				}
+			}
+
+			// Skip if no pods found in this namespace
+			if len(podNames) == 0 {
+				continue
+			}
+
+			// Get container names for all selected pods in this namespace
+			for _, pod := range podNames {
+				var containerName string
+				if container == "" {
+					containerName, err = getFirstContainer(clientset, ns, pod)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", pod, ns, err)
+						os.Exit(1)
+					}
+				} else {
+					containerName = container
+				}
+				allPods = append(allPods, PodInfo{
+					Namespace: ns,
+					Name:      pod,
+					Container: containerName,
+				})
+			}
 		}
 	}
 
