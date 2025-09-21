@@ -92,14 +92,17 @@ make build-arch GOOS=linux GOARCH=arm64
 ### 기본 사용법
 
 ```bash
-# 대화형 모드 - 퍼지 파인더를 사용하여 네임스페이스와 파드 선택
-./ktail
+# 대화형 모드 - 네임스페이스와 파드를 선택하여 로그 추적
+ktail
 
-# 네임스페이스와 파드를 직접 지정
-./ktail -n my-namespace -p my-pod
+# 특정 네임스페이스의 모든 파드 로그 추적
+ktail -n my-namespace
+
+# 특정 파드의 로그 추적
+ktail -n my-namespace -p my-pod
 
 # 도움말 보기
-./ktail --help
+ktail --help
 ```
 
 ### 명령줄 옵션
@@ -109,28 +112,33 @@ make build-arch GOOS=linux GOARCH=arm64
   ktail [flags]
 
 플래그:
-  -c, --container string    컨테이너 이름 (제공되지 않으면 첫 번째 컨테이너 사용)
-  -f, --follow             로그 출력 추적 (기본값: true)
   -h, --help               ktail 도움말
+  -m, --multi              멀티 선택 활성화 (기본값: true)
   -n, --namespace string   Kubernetes 네임스페이스 (제공되지 않으면 대화형으로 선택)
-  -p, --pod string         파드 이름 (제공되지 않으면 대화형으로 선택)
+  -p, --pod string         파드 이름 (제공되지 않으면 모든 파드 선택)
   -t, --tail int           로그 끝에서 보여줄 라인 수 (기본값: 100)
 ```
 
 ### 예제
 
 ```bash
+# 대화형으로 네임스페이스와 파드 선택
+ktail
+
+# production 네임스페이스의 모든 파드 로그 추적
+ktail -n production
+
 # 특정 파드의 로그 추적
-./ktail -n production -p web-app-7d4f8b9c6-xyz12
+ktail -n production -p web-app-7d4f8b9c6-xyz12
 
-# 마지막 50줄을 보여주고 추적
-./ktail -n staging -p api-server -t 50
+# 마지막 500줄을 보여주고 추적
+ktail -t 500
 
-# 특정 컨테이너의 로그 추적
-./ktail -n default -p my-pod -c sidecar-container
+# tail 스타일 플래그 사용 (최근 1000줄 추적)
+ktail -1000f
 
-# 사용자 정의 tail 라인으로 대화형 선택
-./ktail -t 200
+# 특정 네임스페이스에서 최근 200줄 추적
+ktail -200f -n staging
 ```
 
 ## 개발

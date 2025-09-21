@@ -92,14 +92,17 @@ make build-arch GOOS=linux GOARCH=arm64
 ### Basic Usage
 
 ```bash
-# Interactive mode - select namespace and pod using fuzzy finder
-./ktail
+# Interactive mode - select namespace and pods to tail logs
+ktail
 
-# Specify namespace and pod directly
-./ktail -n my-namespace -p my-pod
+# Tail logs from all pods in a specific namespace
+ktail -n my-namespace
+
+# Tail logs from a specific pod
+ktail -n my-namespace -p my-pod
 
 # Show help
-./ktail --help
+ktail --help
 ```
 
 ### Command Line Options
@@ -109,28 +112,33 @@ Usage:
   ktail [flags]
 
 Flags:
-  -c, --container string    Container name (if not provided, will use the first container)
-  -f, --follow             Follow log output (default: true)
   -h, --help               help for ktail
+  -m, --multi              Enable multi-selection (default: true)
   -n, --namespace string   Kubernetes namespace (if not provided, will be selected interactively)
-  -p, --pod string         Pod name (if not provided, will be selected interactively)
+  -p, --pod string         Pod name (if not provided, will select all pods)
   -t, --tail int           Number of lines to show from the end of logs (default: 100)
 ```
 
 ### Examples
 
 ```bash
-# Follow logs from a specific pod
-./ktail -n production -p web-app-7d4f8b9c6-xyz12
+# Interactive selection of namespace and pods
+ktail
 
-# Show last 50 lines and follow
-./ktail -n staging -p api-server -t 50
+# Tail logs from all pods in production namespace
+ktail -n production
 
-# Follow logs from a specific container
-./ktail -n default -p my-pod -c sidecar-container
+# Tail logs from a specific pod
+ktail -n production -p web-app-7d4f8b9c6-xyz12
 
-# Interactive selection with custom tail lines
-./ktail -t 200
+# Show last 500 lines and follow
+ktail -t 500
+
+# Use tail-style flags (follow recent 1000 lines)
+ktail -1000f
+
+# Follow recent 200 lines from staging namespace
+ktail -200f -n staging
 ```
 
 ## Development
