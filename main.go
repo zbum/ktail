@@ -10,8 +10,9 @@ import (
 var (
 	namespace   string
 	podName     string
-	tailLines   int
+	tailLines   = 100
 	multiSelect bool
+	container   string
 )
 
 var rootCmd = &cobra.Command{
@@ -40,8 +41,9 @@ Examples:
 func init() {
 	rootCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Kubernetes namespace (if not provided, will be selected interactively)")
 	rootCmd.Flags().StringVarP(&podName, "pod", "p", "", "Pod name (if not provided, will select all pods in namespace)")
-	rootCmd.Flags().IntVarP(&tailLines, "tail", "t", 100, "Number of lines to show from the end of logs")
+	rootCmd.Flags().IntVarP(&tailLines, "tail", "t", 10, "Number of lines to show from the end of logs")
 	rootCmd.Flags().BoolVarP(&multiSelect, "multi", "m", true, "Enable multi-selection for pods")
+	rootCmd.Flags().StringVarP(&container, "container", "c", "", "Container name")
 }
 
 func main() {
@@ -99,6 +101,25 @@ func runKtail(cmd *cobra.Command, args []string) {
 	// Skip if no pods found in this namespace
 	if len(podNames) == 0 {
 		return
+	}
+
+	// Get container names for all selected pods in this namespace
+	for _, pod := range podNames {
+		var containerName string
+		if container == "" {
+			containerName, err = getFirstContainer(clientset, targetNamespace, pod)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", pod, targetNamespace, err)
+				os.Exit(1)
+			}
+		} else {
+			containerName = container
+		}
+		allPods = append(allPods, PodInfo{
+			Namespace: targetNamespace,
+			Name:      pod,
+			Container: containerName,
+		})
 	}
 
 	if len(allPods) == 0 {

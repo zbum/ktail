@@ -25,26 +25,6 @@ func selectNamespace(clientset *kubernetes.Clientset) (string, error) {
 	return runFuzzyFinder(namespaceList, "Select namespace:")
 }
 
-// selectNamespacesMulti allows interactive multi-selection of namespaces
-func selectNamespacesMulti(clientset *kubernetes.Clientset) ([]string, error) {
-	namespaces, err := clientset.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list namespaces: %v", err)
-	}
-
-	var namespaceList []string
-	for _, ns := range namespaces.Items {
-		namespaceList = append(namespaceList, ns.Name)
-	}
-
-	selected, err := runFuzzyFinderMulti(namespaceList, "Select namespaces (use Tab to select multiple):")
-	if err != nil {
-		return nil, err
-	}
-
-	return selected, nil
-}
-
 // selectPodsMulti allows interactive multi-selection of pods in a namespace
 func selectPodsMulti(clientset *kubernetes.Clientset, namespace string) ([]string, error) {
 	pods, err := clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
