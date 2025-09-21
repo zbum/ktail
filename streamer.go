@@ -54,8 +54,11 @@ func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo,
 		case <-ctx.Done():
 			return nil
 		case logLine := <-logChan:
-			// Format: [namespace/pod] log line
-			fmt.Printf("[%s/%s] %s\n", logLine.PodInfo.Namespace, logLine.PodInfo.Name, logLine.Line)
+			// Format: [namespace/pod] log line with colors
+			fmt.Printf("[%s/%s] %s\n",
+				colorizeNamespace(logLine.PodInfo.Namespace),
+				colorizePod(logLine.PodInfo.Name),
+				logLine.Line)
 		}
 	}
 }
@@ -89,7 +92,8 @@ func watchPodsWithTracking(clientset *kubernetes.Clientset, namespace string, lo
 			switch event.Type {
 			case "ADDED":
 				// New pod created, wait for it to be ready and start streaming its logs
-				fmt.Printf("New pod detected: %s/%s, waiting for container to be ready...\n", namespace, pod.Name)
+				fmt.Printf("New pod detected: %s/%s, waiting for container to be ready...\n",
+					colorizeNamespace(namespace), colorizePod(pod.Name))
 				go waitForPodAndStreamLogsWithTracking(clientset, PodInfo{
 					Namespace: namespace,
 					Name:      pod.Name,
@@ -105,7 +109,8 @@ func watchPodsWithTracking(clientset *kubernetes.Clientset, namespace string, lo
 							if !(*streamingPods)[podKey] {
 								(*streamingPods)[podKey] = true
 								streamingMutex.Unlock()
-								fmt.Printf("Pod %s/%s is now ready, starting log stream...\n", namespace, pod.Name)
+								fmt.Printf("Pod %s/%s is now ready, starting log stream...\n",
+									colorizeNamespace(namespace), colorizePod(pod.Name))
 								go streamPodLogs(clientset, PodInfo{
 									Namespace: namespace,
 									Name:      pod.Name,
@@ -119,7 +124,8 @@ func watchPodsWithTracking(clientset *kubernetes.Clientset, namespace string, lo
 					}
 				}
 			case "DELETED":
-				fmt.Printf("Pod deleted: %s/%s, stopping log stream...\n", namespace, pod.Name)
+				fmt.Printf("Pod deleted: %s/%s, stopping log stream...\n",
+					colorizeNamespace(namespace), colorizePod(pod.Name))
 				streamingMutex.Lock()
 				delete(*streamingPods, podKey)
 				streamingMutex.Unlock()
@@ -165,7 +171,8 @@ func waitForPodAndStreamLogsWithTracking(clientset *kubernetes.Clientset, pod Po
 						if !(*streamingPods)[podKey] {
 							(*streamingPods)[podKey] = true
 							streamingMutex.Unlock()
-							fmt.Printf("Pod %s/%s is ready, starting log stream...\n", pod.Namespace, pod.Name)
+							fmt.Printf("Pod %s/%s is ready, starting log stream...\n",
+								colorizeNamespace(pod.Namespace), colorizePod(pod.Name))
 							streamPodLogs(clientset, pod, logChan, ctx)
 						} else {
 							streamingMutex.Unlock()
@@ -174,7 +181,8 @@ func waitForPodAndStreamLogsWithTracking(clientset *kubernetes.Clientset, pod Po
 					}
 				}
 			} else if podObj.Status.Phase == corev1.PodFailed || podObj.Status.Phase == corev1.PodSucceeded {
-				fmt.Printf("Pod %s/%s is in %s state, skipping log stream\n", pod.Namespace, pod.Name, podObj.Status.Phase)
+				fmt.Printf("Pod %s/%s is in %s state, skipping log stream\n",
+					colorizeNamespace(pod.Namespace), colorizePod(pod.Name), podObj.Status.Phase)
 				return
 			}
 
@@ -184,7 +192,8 @@ func waitForPodAndStreamLogsWithTracking(clientset *kubernetes.Clientset, pod Po
 		}
 	}
 
-	fmt.Printf("Pod %s/%s did not become ready within timeout, skipping log stream\n", pod.Namespace, pod.Name)
+	fmt.Printf("Pod %s/%s did not become ready within timeout, skipping log stream\n",
+		colorizeNamespace(pod.Namespace), colorizePod(pod.Name))
 }
 
 // streamPodLogs streams logs from a single pod
@@ -192,7 +201,8 @@ func streamPodLogs(clientset *kubernetes.Clientset, pod PodInfo, logChan chan<- 
 	// Send header information for this pod
 	logChan <- LogLine{
 		PodInfo: pod,
-		Line:    fmt.Sprintf("=== Starting logs for %s/%s (container: %s) ===", pod.Namespace, pod.Name, pod.Container),
+		Line: fmt.Sprintf("=== Starting logs for %s/%s (container: %s) ===",
+			colorizeNamespace(pod.Namespace), colorizePod(pod.Name), colorizeContainer(pod.Container)),
 	}
 
 	req := clientset.CoreV1().Pods(pod.Namespace).GetLogs(pod.Name, &corev1.PodLogOptions{

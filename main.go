@@ -13,6 +13,7 @@ var (
 	tailLines   = 100
 	multiSelect bool
 	container   string
+	noColor     bool
 )
 
 var rootCmd = &cobra.Command{
@@ -44,6 +45,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&tailLines, "tail", "t", 10, "Number of lines to show from the end of logs")
 	rootCmd.Flags().BoolVarP(&multiSelect, "multi", "m", true, "Enable multi-selection for pods")
 	rootCmd.Flags().StringVarP(&container, "container", "c", "", "Container name")
+	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 }
 
 func main() {
@@ -130,7 +132,10 @@ func runKtail(cmd *cobra.Command, args []string) {
 	// Display selected pods
 	fmt.Printf("Tailing logs for %d pod(s) across %d namespace(s)\n", len(allPods), len(targetNamespace))
 	for _, pod := range allPods {
-		fmt.Printf("  - %s/%s (container: %s)\n", pod.Namespace, pod.Name, pod.Container)
+		fmt.Printf("  - %s/%s (container: %s)\n",
+			colorizeNamespace(pod.Namespace),
+			colorizePod(pod.Name),
+			colorizeContainer(pod.Container))
 	}
 	fmt.Println("Press Ctrl+C to stop...")
 
