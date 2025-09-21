@@ -16,8 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// streamLogsWithWatch streams logs with pod watching capability
-func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo, namespace string) error {
+func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo, namespace string, watch bool) error {
 	// Set up signal handling for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -46,7 +45,9 @@ func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo,
 		go streamPodLogs(clientset, pod, logChan, ctx)
 	}
 
-	go watchPodsWithTracking(clientset, namespace, logChan, ctx, &streamingPods, &streamingMutex)
+	if watch {
+		go watchPodsWithTracking(clientset, namespace, logChan, ctx, &streamingPods, &streamingMutex)
+	}
 
 	// Process log lines from all pods
 	for {

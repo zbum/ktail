@@ -14,6 +14,7 @@ var (
 	multiSelect bool
 	container   string
 	noColor     bool
+	watch       bool
 )
 
 var rootCmd = &cobra.Command{
@@ -32,6 +33,7 @@ Features:
 Examples:
   ktail                                    # Interactive selection (all pods)
   ktail -n my-namespace                    # All pods in my-namespace
+  ktail -n my-namespace -w                 # All pods in my-namespace with watch mode
   ktail -m                                 # Multi-select pods
   ktail -n my-ns -p my-pod                 # Specific pod
   ktail -1000f                             # Follow recent 1000 lines
@@ -45,6 +47,7 @@ func init() {
 	rootCmd.Flags().IntVarP(&tailLines, "tail", "t", 10, "Number of lines to show from the end of logs")
 	rootCmd.Flags().BoolVarP(&multiSelect, "multi", "m", true, "Enable multi-selection for pods")
 	rootCmd.Flags().StringVarP(&container, "container", "c", "", "Container name")
+	rootCmd.Flags().BoolVarP(&watch, "watch", "w", false, "Watch mode : works when namespace only selected.")
 	rootCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 }
 
@@ -139,8 +142,7 @@ func runKtail(cmd *cobra.Command, args []string) {
 	}
 	fmt.Println("Press Ctrl+C to stop...")
 
-	// Stream logs for all selected pods
-	err = streamLogsWithWatch(clientset, allPods, targetNamespace)
+	err = streamLogsWithWatch(clientset, allPods, targetNamespace, watch && (podName == ""))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to stream logs: %v\n", err)
 		os.Exit(1)
