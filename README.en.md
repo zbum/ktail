@@ -1,95 +1,40 @@
 # ktail
 
-A Kubernetes log tail utility with interactive namespace and pod selection using fuzzy finder.
-
-## Overview
-
-`ktail` is a tool that provides `tail`-like functionality for Kubernetes pod logs. It allows you to interactively select namespaces and pods using a fuzzy finder for a better user experience, making it easy to follow logs from any pod in your cluster.
+A simple and powerful tool for real-time Kubernetes pod log tailing.
 
 ## Features
 
 - 🎯 **Interactive Selection**: Use fuzzy finder to interactively select namespaces and pods
-- 📊 **Pod Status Display**: Visual indicators for pod status (Running, Pending, Failed, etc.)
 - 🔄 **Real-time Log Streaming**: Follow logs in real-time with `tail -f` behavior
-- 🎛️ **Flexible Options**: Support for custom tail lines, container selection, and more
-- 🚀 **Easy to Use**: Simple CLI interface with sensible defaults
+- 🎨 **Colored Output**: Namespace and pod names are displayed in green for better readability
+- 👀 **Watch Mode**: Automatically track logs from newly created pods in a namespace
+- 🎛️ **Flexible Options**: Support for custom tail lines, container selection, color disabling, and more
 
 ## Prerequisites
 
-- Go 1.19 or later
 - Access to a Kubernetes cluster
 - `kubectl` configured to access your cluster
 
-**Note**: No external dependencies required! The tool uses the `go-fuzzyfinder` library for interactive selection, so you don't need to install `fzf` separately.
-
 ## Installation
 
-### Option 1: Download from GitHub Releases (Recommended)
+### Build from Source
 
-1. Go to the [Releases page](https://github.com/zbum/ktail/releases)
-2. Download the appropriate archive for your platform:
-   - **Linux**: `ktail-linux.tar.gz` (includes amd64, arm64, 386, arm, ppc64, ppc64le, mips, mipsle, mips64, mips64le, riscv64, s390x)
-   - **macOS**: `ktail-darwin.tar.gz` (includes amd64, arm64)
-   - **Windows**: `ktail-windows.zip` (includes amd64, 386, arm64)
-   - **All platforms**: `ktail-all.tar.gz` (includes all binaries)
-
-3. Extract the archive and move the binary to your PATH:
 ```bash
-# For Linux/macOS
-tar -xzf ktail-linux.tar.gz
-chmod +x ktail-linux-*
-sudo mv ktail-linux-* /usr/local/bin/ktail
-
-# For Windows
-# Extract ktail-windows.zip and add to PATH
-```
-
-4. Verify installation:
-```bash
-ktail --help
-```
-
-### Option 2: Build from Source
-
-1. Clone the repository:
-```bash
+# Clone repository
 git clone <repository-url>
 cd ktail
-```
 
-2. Build the project:
-```bash
-# Using Makefile (recommended)
-make build
-
-# Or manually
+# Build
 go build -o ktail
-```
 
-3. Make it executable and move to PATH (optional):
-```bash
+# Make executable and add to PATH (optional)
 chmod +x ktail
 sudo mv ktail /usr/local/bin/
 ```
 
-### Option 3: Build for All Platforms
-
-```bash
-# Build for all supported platforms and architectures
-make build-all
-
-# Build for specific platform
-make build-linux
-make build-darwin
-make build-windows
-
-# Build for specific architecture
-make build-arch GOOS=linux GOARCH=arm64
-```
-
 ## Usage
 
-### Basic Usage
+### Basic Commands
 
 ```bash
 # Interactive mode - select namespace and pods to tail logs
@@ -101,122 +46,76 @@ ktail -n my-namespace
 # Tail logs from a specific pod
 ktail -n my-namespace -p my-pod
 
-# Show help
-ktail --help
+# Watch mode - automatically track logs from newly created pods in a namespace
+ktail -n my-namespace -w
 ```
 
 ### Command Line Options
 
-```bash
-Usage:
-  ktail [flags]
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-n, --namespace` | Kubernetes namespace | Interactive selection |
+| `-p, --pod` | Pod name | All pods |
+| `-c, --container` | Container name | First container |
+| `-t, --tail` | Number of lines to show from the end of logs | 100 |
+| `-m, --multi` | Enable multi-selection | true |
+| `-w, --watch` | Watch mode (when namespace only selected) | false |
+| `--no-color` | Disable colored output | false |
 
-Flags:
-  -h, --help               help for ktail
-  -m, --multi              Enable multi-selection (default: true)
-  -n, --namespace string   Kubernetes namespace (if not provided, will be selected interactively)
-  -p, --pod string         Pod name (if not provided, will select all pods)
-  -t, --tail int           Number of lines to show from the end of logs (default: 100)
+### Usage Examples
+
+#### 1. Interactive Mode
+```bash
+# Interactively select namespace and pods
+ktail
 ```
 
-### Examples
-
+#### 2. All Pods in Namespace
 ```bash
-# Interactive selection of namespace and pods
-ktail
-
 # Tail logs from all pods in production namespace
 ktail -n production
+```
 
+#### 3. Specific Pod
+```bash
 # Tail logs from a specific pod
 ktail -n production -p web-app-7d4f8b9c6-xyz12
+```
 
+#### 4. Watch Mode
+```bash
+# Automatically track logs from newly created pods in namespace
+ktail -n production -w
+```
+
+#### 5. Specify Container
+```bash
+# Tail logs from a specific container
+ktail -n production -p web-app -c nginx
+```
+
+#### 6. Adjust Log Lines
+```bash
 # Show last 500 lines and follow
 ktail -t 500
 
 # Use tail-style flags (follow recent 1000 lines)
 ktail -1000f
-
-# Follow recent 200 lines from staging namespace
-ktail -200f -n staging
 ```
 
-## Development
-
-### Prerequisites
-- Go 1.24 or later
-- Make (for using Makefile)
-
-### Running tests
+#### 7. Disable Colors
 ```bash
-# Run all tests
-make test
-
-# Run tests with coverage
-make test-coverage
-
-# Or manually
-go test ./...
+# Disable colored output
+ktail --no-color -n production
 ```
 
-### Building for different platforms
-```bash
-# Build for all supported platforms
-make build-all
+## Troubleshooting
 
-# Build for specific platforms
-make build-linux
-make build-darwin
-make build-windows
+### Common Issues
 
-# Build for specific architecture
-make build-arch GOOS=linux GOARCH=arm64
-
-# List all supported platforms
-make list-platforms
-```
-
-### Code Quality
-```bash
-# Format code
-make fmt
-
-# Run linter
-make lint
-
-# Run go vet
-make vet
-
-# Security check
-make security
-
-# Run all quality checks
-make dev-setup
-```
-
-### Creating a Release
-```bash
-# Create a new release tag and push to GitHub
-make release-github
-
-# Or manually
-make tag
-make release-tag
-```
-
-This will:
-1. Create a git tag (e.g., v1.0.0)
-2. Push the tag to GitHub
-3. Trigger GitHub Actions to build binaries for all platforms
-4. Create a GitHub Release with all the binaries attached
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+1. **kubectl connection error**: Check if `kubectl` is properly configured
+2. **Permission error**: Verify you have appropriate permissions for the cluster
+3. **Pods not visible**: Check namespace permissions
 
 ## License
 
