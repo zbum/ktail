@@ -36,6 +36,7 @@ jobs:
 
     - name: Build for all platforms
       run: |
+        make clean
         make build-all
         echo "Build completed for all platforms"
 
