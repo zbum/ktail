@@ -87,7 +87,7 @@ func streamLogsMultiNamespace(clientset *kubernetes.Clientset, pods []PodInfo) e
 }
 
 // streamLogsWithWatch streams logs with pod watching capability
-func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo, namespaces []string) error {
+func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo, namespace string) error {
 	// Set up signal handling for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -116,10 +116,7 @@ func streamLogsWithWatch(clientset *kubernetes.Clientset, initialPods []PodInfo,
 		go streamPodLogs(clientset, pod, logChan, ctx)
 	}
 
-	// Start pod watchers for each namespace
-	for _, ns := range namespaces {
-		go watchPodsWithTracking(clientset, ns, logChan, ctx, &streamingPods, &streamingMutex)
-	}
+	go watchPodsWithTracking(clientset, namespace, logChan, ctx, &streamingPods, &streamingMutex)
 
 	// Process log lines from all pods
 	for {

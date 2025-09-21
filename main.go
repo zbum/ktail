@@ -8,16 +8,10 @@ import (
 )
 
 var (
-	namespace      string
-	namespaces     []string
-	podName        string
-	tailLines      int
-	container      string
-	multiSelect    bool
-	multiNamespace bool
-	allPodsFlag    bool
-	singlePod      bool
-	watchMode      bool
+	namespace   string
+	podName     string
+	tailLines   int
+	multiSelect bool
 )
 
 var rootCmd = &cobra.Command{
@@ -36,14 +30,8 @@ Features:
 Examples:
   ktail                                    # Interactive selection (all pods)
   ktail -n my-namespace                    # All pods in my-namespace
-  ktail -N ns1,ns2,ns3                     # All pods in multiple namespaces
-  ktail -M                                 # Multi-select namespaces (all pods)
-  ktail -s                                 # Select single pod interactively
   ktail -m                                 # Multi-select pods
   ktail -n my-ns -p my-pod                 # Specific pod
-  ktail -N ns1,ns2 -m                      # Multi-select pods from multiple namespaces
-  ktail -w -n my-namespace                 # Watch mode: track all pods + new pods in my-namespace
-  ktail -w -M                              # Watch mode: track all pods + new pods in selected namespaces
   ktail -1000f                             # Follow recent 1000 lines
   ktail -500f -n my-ns                     # Follow recent 500 lines from my-ns namespace`,
 	Run: runKtail,
@@ -51,15 +39,9 @@ Examples:
 
 func init() {
 	rootCmd.Flags().StringVarP(&namespace, "namespace", "n", "", "Kubernetes namespace (if not provided, will be selected interactively)")
-	rootCmd.Flags().StringSliceVarP(&namespaces, "namespaces", "N", []string{}, "Kubernetes namespaces (comma-separated, if not provided, will be selected interactively)")
 	rootCmd.Flags().StringVarP(&podName, "pod", "p", "", "Pod name (if not provided, will select all pods in namespace)")
-	rootCmd.Flags().BoolVarP(&singlePod, "single", "s", false, "Select single pod interactively (default: all pods)")
 	rootCmd.Flags().IntVarP(&tailLines, "tail", "t", 100, "Number of lines to show from the end of logs")
-	rootCmd.Flags().StringVarP(&container, "container", "c", "", "Container name (if not provided, will use the first container)")
-	rootCmd.Flags().BoolVarP(&multiSelect, "multi", "m", false, "Enable multi-selection for pods")
-	rootCmd.Flags().BoolVarP(&multiNamespace, "multi-namespace", "M", false, "Enable multi-selection for namespaces")
-	rootCmd.Flags().BoolVarP(&allPodsFlag, "all", "a", false, "Select all pods in the namespace(s) (default behavior)")
-	rootCmd.Flags().BoolVarP(&watchMode, "watch", "w", true, "Watch for new pods and automatically stream their logs")
+	rootCmd.Flags().BoolVarP(&multiSelect, "multi", "m", true, "Enable multi-selection for pods")
 }
 
 func main() {
@@ -81,120 +63,42 @@ func runKtail(cmd *cobra.Command, args []string) {
 	}
 
 	// Determine target namespaces
-	var targetNamespaces []string
-	if len(namespaces) > 0 {
-		// Use provided namespaces
-		targetNamespaces = namespaces
-	} else if namespace != "" {
-		// Use single namespace
-		targetNamespaces = []string{namespace}
-	} else if multiNamespace {
-		// Multi-select namespaces
-		targetNamespaces, err = selectNamespacesMulti(clientset)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to select namespaces: %v\n", err)
-			os.Exit(1)
-		}
-	} else {
-		// Single namespace selection
-		namespace, err = selectNamespace(clientset)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to select namespace: %v\n", err)
-			os.Exit(1)
-		}
-		targetNamespaces = []string{namespace}
-	}
-
-	if len(targetNamespaces) == 0 {
-		fmt.Fprintf(os.Stderr, "No namespaces selected\n")
+	var targetNamespace string
+	// Single namespace selection
+	targetNamespace, err = selectNamespace(clientset)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to select namespace: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Collect pods from all target namespaces
 	var allPods []PodInfo
 
-	// If multi-select pods across multiple namespaces, select from all namespaces at once
-	if multiSelect && len(targetNamespaces) > 1 {
-		// Multi-select pods across all target namespaces
-		selectedPods, err := selectPodsMultiAcrossNamespaces(clientset, targetNamespaces)
+	// Original logic for single namespace or when not using multi-select across namespaces
+
+	var podNames []string
+	if podName != "" {
+		// Single pod specified
+		podNames = []string{podName}
+	} else if multiSelect {
+		// Multi-select pods in single namespace
+		podNames, err = selectPodsMulti(clientset, targetNamespace)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to select pods across namespaces: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Failed to select pods in namespace %s: %v\n", targetNamespace, err)
 			os.Exit(1)
 		}
-
-		// Get container names for all selected pods
-		for _, podInfo := range selectedPods {
-			var containerName string
-			if container == "" {
-				containerName, err = getFirstContainer(clientset, podInfo.Namespace, podInfo.Name)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", podInfo.Name, podInfo.Namespace, err)
-					os.Exit(1)
-				}
-			} else {
-				containerName = container
-			}
-			allPods = append(allPods, PodInfo{
-				Namespace: podInfo.Namespace,
-				Name:      podInfo.Name,
-				Container: containerName,
-			})
-		}
 	} else {
-		// Original logic for single namespace or when not using multi-select across namespaces
-		for _, ns := range targetNamespaces {
-			var podNames []string
-			if podName != "" {
-				// Single pod specified
-				podNames = []string{podName}
-			} else if singlePod {
-				// Single pod selection
-				selectedPod, err := selectPod(clientset, ns)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to select pod in namespace %s: %v\n", ns, err)
-					os.Exit(1)
-				}
-				podNames = []string{selectedPod}
-			} else if multiSelect {
-				// Multi-select pods in single namespace
-				podNames, err = selectPodsMulti(clientset, ns)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to select pods in namespace %s: %v\n", ns, err)
-					os.Exit(1)
-				}
-			} else {
-				// Default: Select all pods in the namespace
-				podNames, err = getAllPods(clientset, ns)
-				if err != nil {
-					fmt.Fprintf(os.Stderr, "Failed to get all pods in namespace %s: %v\n", ns, err)
-					os.Exit(1)
-				}
-			}
-
-			// Skip if no pods found in this namespace
-			if len(podNames) == 0 {
-				continue
-			}
-
-			// Get container names for all selected pods in this namespace
-			for _, pod := range podNames {
-				var containerName string
-				if container == "" {
-					containerName, err = getFirstContainer(clientset, ns, pod)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "Failed to get container name for pod %s in namespace %s: %v\n", pod, ns, err)
-						os.Exit(1)
-					}
-				} else {
-					containerName = container
-				}
-				allPods = append(allPods, PodInfo{
-					Namespace: ns,
-					Name:      pod,
-					Container: containerName,
-				})
-			}
+		// Default: Select all pods in the namespace
+		podNames, err = getAllPods(clientset, targetNamespace)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to get all pods in namespace %s: %v\n", targetNamespace, err)
+			os.Exit(1)
 		}
+	}
+
+	// Skip if no pods found in this namespace
+	if len(podNames) == 0 {
+		return
 	}
 
 	if len(allPods) == 0 {
@@ -203,18 +107,14 @@ func runKtail(cmd *cobra.Command, args []string) {
 	}
 
 	// Display selected pods
-	fmt.Printf("Tailing logs for %d pod(s) across %d namespace(s)\n", len(allPods), len(targetNamespaces))
+	fmt.Printf("Tailing logs for %d pod(s) across %d namespace(s)\n", len(allPods), len(targetNamespace))
 	for _, pod := range allPods {
 		fmt.Printf("  - %s/%s (container: %s)\n", pod.Namespace, pod.Name, pod.Container)
 	}
 	fmt.Println("Press Ctrl+C to stop...")
 
 	// Stream logs for all selected pods
-	if watchMode {
-		err = streamLogsWithWatch(clientset, allPods, targetNamespaces)
-	} else {
-		err = streamLogsMultiNamespace(clientset, allPods)
-	}
+	err = streamLogsWithWatch(clientset, allPods, targetNamespace)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to stream logs: %v\n", err)
 		os.Exit(1)
