@@ -17,7 +17,7 @@ jobs:
         fetch-depth: 0  # 전체 히스토리를 가져와서 태그 정보를 정확히 가져옴
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: '1.24'
 
@@ -111,7 +111,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ktail-binaries-${{ steps.version.outputs.VERSION }}
         path: |
